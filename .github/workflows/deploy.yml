@@ -48,5 +48,6 @@ jobs:
           helm upgrade --install vane deploy/chart -n vane \
             --set image.repository="ghcr.io/${{ github.repository_owner }}/vane" \
             --set image.tag="${{ github.sha }}" \
+            --set host="${{ vars.VANE_HOST }}" 
             --wait --timeout 10m
           rm -f "$RUNNER_TEMP/kubeconfig"
