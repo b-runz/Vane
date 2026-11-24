@@ -29,6 +29,8 @@ WORKDIR /home/vane
 COPY --from=builder /home/vane/public ./public
 COPY --from=builder /home/vane/.next/static ./public/_next/static
 COPY --from=builder /home/vane/.next/standalone ./
+# Next's standalone output omits this file; the server fails to start without it.
+COPY --from=builder /home/vane/.next/server/preview-props.json ./.next/server/preview-props.json
 COPY --from=builder /home/vane/data ./data
 COPY drizzle ./drizzle
 
