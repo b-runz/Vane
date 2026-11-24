@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vane
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: vane }
+  template:
+    metadata:
+      labels: { app: vane }
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.pullSecretName }}
+      initContainers:
+        # First start only: seed config.json with the freellmapi provider, so the setup screen is skipped.
+        - name: seed-config
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          env:
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef: { name: {{ .Values.secretName }}, key: LLM_API_KEY }
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              if [ ! -f /home/vane/data/config.json ]; then
+                cat > /home/vane/data/config.json <<JSON
+              {
+                "version": 1,
+                "setupComplete": true,
+                "preferences": {},
+                "personalization": {},
+                "modelProviders": [
+                  {
+                    "id": "freellmapi",
+                    "name": "FreeLLMAPI",
+                    "type": "openai",
+                    "chatModels": [{ "name": "{{ .Values.llmModel }}", "key": "{{ .Values.llmModel }}" }],
+                    "embeddingModels": [],
+                    "config": { "apiKey": "$LLM_API_KEY", "baseURL": "{{ .Values.llmBaseURL }}" },
+                    "hash": "seed"
+                  }
+                ],
+                "search": { "searxngURL": "" }
+              }
+              JSON
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /home/vane/data
+              subPath: data
+      containers:
+        - name: vane
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.port }}
+          volumeMounts:
+            - name: data
+              mountPath: /home/vane/data
+              subPath: data
+            - name: data
+              mountPath: /home/vane/uploads
+              subPath: uploads
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vane-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vane-data
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: {{ .Values.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vane
+spec:
+  selector: { app: vane }
+  ports:
+    - port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vane
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [{{ .Values.host | quote }}]
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vane
+                port: { number: {{ .Values.port }} }

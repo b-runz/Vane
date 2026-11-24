@@ -1,0 +1,21 @@
+# Install: helm upgrade --install vane . -n vane --create-namespace
+# Secret vane-secrets must exist: LLM_API_KEY (freellmapi unified key; empty until set).
+
+image:
+  repository: ghcr.io/b-runz/vane
+  tag: "0.1.0"
+
+pullSecretName: ghcr-pull
+host: ""   # set by the workflow from the VANE_HOST repository variable
+port: 3000
+storage: 10Gi
+storageClass: local-path
+secretName: vane-secrets
+
+# Provider: freellmapi, reached in-cluster (no tailnet hop).
+llmBaseURL: http://freellmapi.llm.svc.cluster.local:3001/v1
+llmModel: auto
+
+resources:
+  requests: { memory: 512Mi, cpu: 200m }
+  limits:   { memory: 3Gi }
