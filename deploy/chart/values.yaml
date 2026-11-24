@@ -19,3 +19,9 @@ llmModel: auto
 resources:
   requests: { memory: 512Mi, cpu: 200m }
   limits:   { memory: 3Gi }
+
+# Search provider: searxng (bundled) or tavily (any Tavily-compatible endpoint, e.g. freellmapi /v1/search).
+search:
+  provider: tavily
+  url: http://freellmapi.llm.svc.cluster.local:3001/v1/search
+  apiKeyKey: LLM_API_KEY    # key in the secret above; set to an empty-valued key if none is needed

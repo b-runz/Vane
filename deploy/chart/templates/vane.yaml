@@ -55,6 +55,17 @@ spec:
       containers:
         - name: vane
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          env:
+            - name: SEARCH_PROVIDER
+              value: {{ .Values.search.provider | quote }}
+            - name: SEARCH_URL
+              value: {{ .Values.search.url | quote }}
+            - name: SEARCH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: {{ .Values.search.apiKeyKey }}
+                  optional: true
           ports:
             - containerPort: {{ .Values.port }}
           volumeMounts:
