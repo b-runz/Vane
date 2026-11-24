@@ -1,4 +1,4 @@
-import { getSearxngURL } from './config/serverRegistry';
+import { getSearchConfig, getSearxngURL } from './config/serverRegistry';
 
 export interface SearxngSearchOptions {
   categories?: string[];
@@ -21,13 +21,19 @@ interface SearxngSearchResult {
 // Search provider bridge. SEARCH_PROVIDER=searxng (default) uses the SearXNG instance.
 // SEARCH_PROVIDER=tavily sends the query to any Tavily-compatible endpoint at SEARCH_URL
 // (Tavily itself, freellmapi's /v1/search, or a custom relay), with an optional bearer key.
-const searchTavilyCompatible = async (query: string) => {
-  const url = process.env.SEARCH_URL;
-  if (!url) throw new Error('SEARCH_URL is not set');
+const DEFAULT_SEARCH_URLS: Record<string, string> = {
+  tavily: 'https://api.tavily.com/search',
+  freellmapi: 'http://freellmapi.llm.svc.cluster.local:3001/v1/search',
+};
 
+const searchTavilyCompatible = async (
+  query: string,
+  url: string,
+  apiKey: string,
+) => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (process.env.SEARCH_API_KEY) {
-    headers.Authorization = `Bearer ${process.env.SEARCH_API_KEY}`;
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
   }
 
   const controller = new AbortController();
@@ -61,8 +67,13 @@ export const searchSearxng = async (
   query: string,
   opts?: SearxngSearchOptions,
 ) => {
-  if (process.env.SEARCH_PROVIDER === 'tavily') {
-    return searchTavilyCompatible(query);
+  const search = getSearchConfig();
+  if (search.provider === 'google' || search.provider === 'yandex') {
+    throw new Error(`${search.provider} search is not implemented yet`);
+  }
+  if (search.provider === 'tavily' || search.provider === 'freellmapi') {
+    const url = search.url || DEFAULT_SEARCH_URLS[search.provider];
+    return searchTavilyCompatible(query, url, search.apiKey);
   }
 
   const searxngURL = getSearxngURL();

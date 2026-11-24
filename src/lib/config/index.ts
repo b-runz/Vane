@@ -18,6 +18,9 @@ class ConfigManager {
     modelProviders: [],
     search: {
       searxngURL: '',
+      provider: '',
+      searchURL: '',
+      searchAPIKey: '',
     },
   };
   uiConfigSections: UIConfigSections = {
@@ -112,6 +115,47 @@ class ConfigManager {
         default: '',
         scope: 'server',
         env: 'SEARXNG_API_URL',
+      },
+      {
+        name: 'Search provider',
+        key: 'provider',
+        type: 'select',
+        required: false,
+        description:
+          'Where web search runs. SearXNG is bundled; Tavily and freellmapi use the Tavily wire format; Google and Yandex are not implemented yet.',
+        options: [
+          { name: 'SearXNG (bundled)', value: 'searxng' },
+          { name: 'Tavily', value: 'tavily' },
+          { name: 'freellmapi', value: 'freellmapi' },
+          { name: 'Google (not implemented yet)', value: 'google' },
+          { name: 'Yandex (not implemented yet)', value: 'yandex' },
+        ],
+        default: 'searxng',
+        scope: 'server',
+        env: 'SEARCH_PROVIDER',
+      },
+      {
+        name: 'Search endpoint URL',
+        key: 'searchURL',
+        type: 'string',
+        required: false,
+        description:
+          'Endpoint for Tavily or freellmapi. Leave empty to use the provider default.',
+        placeholder: 'https://api.tavily.com/search',
+        default: '',
+        scope: 'server',
+        env: 'SEARCH_URL',
+      },
+      {
+        name: 'Search API key',
+        key: 'searchAPIKey',
+        type: 'password',
+        required: false,
+        description: 'Key for the search provider (freellmapi unified key, or your Tavily key).',
+        placeholder: '',
+        default: '',
+        scope: 'server',
+        env: 'SEARCH_API_KEY',
       },
     ],
   };

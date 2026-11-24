@@ -13,3 +13,9 @@ export const getConfiguredModelProviderById = (
 
 export const getSearxngURL = () =>
   configManager.getConfig('search.searxngURL', '');
+
+export const getSearchConfig = () => ({
+  provider: (configManager.getConfig('search.provider', '') || 'searxng') as string,
+  url: configManager.getConfig('search.searchURL', '') as string,
+  apiKey: configManager.getConfig('search.searchAPIKey', '') as string,
+});
